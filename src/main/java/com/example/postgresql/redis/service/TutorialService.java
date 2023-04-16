@@ -1,7 +1,10 @@
 package com.example.postgresql.redis.service;
 
+import com.example.postgresql.redis.dto.TutorialDTO;
 import com.example.postgresql.redis.entity.Tutorial;
 import com.example.postgresql.redis.repository.TutorialRepository;
+import com.example.postgresql.redis.util.ReactiveRedisComponent;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -12,8 +15,17 @@ import java.util.Optional;
 @Service
 public class TutorialService {
 
+    public static final String REDIS_KEY = "RK";
+
+    @Autowired
+    private ReactiveRedisComponent reactiveRedisComponent;
+
+    @Autowired
+    private ModelMapper modelMapper;
+
     @Autowired
     TutorialRepository tutorialRepository;
+
 
     public Flux<Tutorial> findAll() {
         return tutorialRepository.findAll();
@@ -24,7 +36,12 @@ public class TutorialService {
     }
 
     public Mono<Tutorial> findById(int id) {
-        return tutorialRepository.findById(id);
+        Mono<Tutorial> tutorialMono = tutorialRepository.findById(id);
+        //Mono<TutorialDTO> tutorialDTOMono = tutorialMono.map(x ->modelMapper.map(x, TutorialDTO.class));
+        //tutorialDTOMono.subscribe(System.out::println);
+        tutorialMono.flatMap(x ->
+                reactiveRedisComponent.setKeyValues(REDIS_KEY, modelMapper.map(x, TutorialDTO.class)));
+        return tutorialMono;
     }
 
     public Mono<Tutorial> save(Tutorial tutorial) {

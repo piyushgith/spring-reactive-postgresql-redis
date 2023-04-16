@@ -9,6 +9,7 @@ import org.springframework.data.relational.core.mapping.Table;
 
 import java.io.Serializable;
 
+
 @Setter
 @Getter
 @Table
